@@ -123,10 +123,10 @@ function DatamoshGlitch({ paused }: { paused: boolean }) {
   const [phase, setPhase] = useState<'idle' | 'skull' | 'access'>('idle')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Trigger every ~1.5 minutes (90s), skip if paused
+  // Trigger every ~5 minutes (300s), skip if paused
   useEffect(() => {
     const trigger = () => {
-      const delay = 85000 + Math.random() * 10000 // ~85-95s (1.5 minutes)
+      const delay = 295000 + Math.random() * 10000 // ~295-305s (5 minutes)
       return setTimeout(() => {
         if (!paused) {
           setPhase('skull')
@@ -136,15 +136,27 @@ function DatamoshGlitch({ paused }: { paused: boolean }) {
         timerRef = trigger()
       }, delay)
     }
-    // First trigger sooner so user sees it
-    let timerRef = setTimeout(() => {
-      if (!paused) {
-        setPhase('skull')
-        setTimeout(() => setPhase('access'), 1000)
-        setTimeout(() => setPhase('idle'), 4000)
-      }
+    
+    let timerRef: ReturnType<typeof setTimeout>;
+    
+    const hasSeenGlitch = typeof window !== 'undefined' ? sessionStorage.getItem('hasSeenGlitch') : null;
+
+    if (!hasSeenGlitch) {
+      // First trigger sooner so user sees it on very first visit
+      timerRef = setTimeout(() => {
+        if (!paused) {
+          setPhase('skull')
+          setTimeout(() => setPhase('access'), 1000)
+          setTimeout(() => setPhase('idle'), 4000)
+        }
+        if (typeof window !== 'undefined') sessionStorage.setItem('hasSeenGlitch', 'true');
+        timerRef = trigger()
+      }, 5000)
+    } else {
+      // Already seen it this session, go straight to the 5-minute loop
       timerRef = trigger()
-    }, 5000)
+    }
+    
     return () => clearTimeout(timerRef)
   }, [paused])
 
@@ -593,7 +605,7 @@ export default function Page() {
           {['Temas', 'Ponente', 'Ubicación'].map((item) => (
             <a href={`#${item.toLowerCase()}`} key={item} onClick={() => setMenuOpen(false)}>{item}</a>
           ))}
-          <a href="https://docs.google.com/forms/d/e/1FAIpQLSenarBAjYKRUfTG9Dvh7KlI1T9cRk47tfBxJDHFuT8IQt5zoA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer" className="nav-cta" onClick={() => { setMenuOpen(false); pauseGlitch() }}>Reservar lugar <ArrowUpRight size={15} /></a>
+          <a href="/inscripcion" className="nav-cta" onClick={() => { setMenuOpen(false); pauseGlitch() }}>Reservar lugar <ArrowUpRight size={15} /></a>
         </nav>
         <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}>
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -615,7 +627,7 @@ export default function Page() {
             Ciberdelincuencia y resiliencia digital: el sector público y privado frente a las amenazas de la región.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSenarBAjYKRUfTG9Dvh7KlI1T9cRk47tfBxJDHFuT8IQt5zoA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer" onClick={pauseGlitch}>Inscribirme ahora <ArrowUpRight size={17} /></a>
+            <a className="button button-primary" href="/inscripcion" onClick={pauseGlitch}>Inscribirme ahora <ArrowUpRight size={17} /></a>
           </div>
           <div className="hero-meta"><span><CalendarDays size={15} /> 19 Y 20 NOV 2026</span><span><Globe2 size={15} /> Trujillo, Perú</span></div>
         </div>
@@ -684,9 +696,7 @@ export default function Page() {
         </div>
         <a 
           className="button button-primary" 
-          href="https://docs.google.com/forms/d/e/1FAIpQLSenarBAjYKRUfTG9Dvh7KlI1T9cRk47tfBxJDHFuT8IQt5zoA/viewform?usp=publish-editor" 
-          target="_blank" 
-          rel="noopener noreferrer"
+          href="/inscripcion" 
           style={{ fontSize: '1.2rem', padding: '15px 40px' }}
         >
           Inscribirme ahora <ArrowUpRight size={20} />
