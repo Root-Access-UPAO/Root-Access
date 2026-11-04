@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { enviarInscripcion } from '@/lib/inscripcion-api'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Press_Start_2P, VT323 } from 'next/font/google'
+import { enviarInscripcion, type InscripcionPayload } from '@/lib/inscripcion-api'
+
+// Fuentes servidas desde el propio dominio (sin peticiones a Google en runtime)
+const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], variable: '--font-press', display: 'swap' })
+const vt323 = VT323({ weight: '400', subsets: ['latin'], variable: '--font-vt323', display: 'swap' })
 
 const F = ['nombre', 'carrera', 'id', 'correo'];
 const V: Record<string, (v: string) => boolean> = {
@@ -17,28 +24,32 @@ const M: Record<string, string> = {
   correo: 'SYNTAX ERROR: correo no válido'
 };
 const LABD: Record<string, string> = { AMBOS_DIAS: 'Día 1 y Día 2', SOLO_DIA_1: 'Día 1', SOLO_DIA_2: 'Día 2' };
+type GlitchBlock = { id: number; w: number; h: number; x: number; y: number; c: string; d: number; dx: number }
+
+const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+const cols = ['#ff2244', '#1aa8ff', '#62d5ff', '#ffffff', '#7c3aed'];
+
 const LABW: Record<string, string> = { MI_LAPTOP: 'Lleva su propia laptop', SIN_LAPTOP: 'Grupo de 2 (sin laptop)', NO_IRE: 'No asiste el día 2' };
 
 export default function InscripcionPage() {
   const [formData, setFormData] = useState({
     nombre: '', carrera: '', id: '', correo: ''
   })
-  const [day, setDay] = useState<string | null>(null)
-  const [ws, setWs] = useState<string | null>(null)
+  const [day, setDay] = useState<InscripcionPayload['asistenciaJornada'] | null>(null)
+  const [ws, setWs] = useState<InscripcionPayload['equipoDia2'] | null>(null)
   
   const [done, setDone] = useState<Record<string, boolean>>({})
   const [bad, setBad] = useState<Record<string, boolean>>({})
   const [status, setStatus] = useState<Record<string, string>>({})
   const [glitching, setGlitching] = useState<Record<string, boolean>>({})
   
-  const [xpVal, setXpVal] = useState(0)
   const [shake, setShake] = useState(false)
   
   const raRef = useRef<HTMLDivElement>(null)
   const ravenRef = useRef<HTMLDivElement>(null)
   const rowsRef = useRef<Record<string, HTMLDivElement | null>>({})
   
-  const [blocksMap, setBlocksMap] = useState<Record<string, any[]>>({})
+  const [blocksMap, setBlocksMap] = useState<Record<string, GlitchBlock[]>>({})
   
   const [log, setLog] = useState('')
   const [ticket, setTicket] = useState<{ code: string, nombre: string, jornada: string, laptop: string } | null>(null)
@@ -51,15 +62,22 @@ export default function InscripcionPage() {
   const [revealStep, setRevealStep] = useState(0)
 
   const abortControllerRef = useRef<AbortController | null>(null)
+  // Evita doble envío: el estado `busy` no se actualiza hasta el siguiente render.
+  const submittingRef = useRef(false)
+  // Todos los timers del componente pasan por aquí para limpiarlos al desmontar.
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  const later = (fn: () => void, ms: number) => {
+    const id = setTimeout(() => { timersRef.current.delete(id); fn() }, ms)
+    timersRef.current.add(id)
+    return id
+  }
 
   const needWs = day && day !== 'SOLO_DIA_1';
 
-  // XP calculation
-  useEffect(() => {
-    let t = 5 + (needWs ? 1 : 0);
-    let n = Object.keys(done).length + (day ? 1 : 0) + ((needWs && ws) ? 1 : 0);
-    setXpVal(Math.round((n / t) * 100));
-  }, [done, day, ws, needWs])
+  // XP: valor derivado, se calcula en el render (no necesita estado ni efecto)
+  const xpTotal = 5 + (needWs ? 1 : 0);
+  const xpDone = Object.keys(done).length + (day ? 1 : 0) + ((needWs && ws) ? 1 : 0);
+  const xpVal = Math.round((xpDone / xpTotal) * 100);
 
   // Raven move
   const [ravenTop, setRavenTop] = useState(60)
@@ -69,11 +87,9 @@ export default function InscripcionPage() {
     if (!el) return;
     setRavenTop(el.offsetTop + 14)
     setRavenHop(false)
-    setTimeout(() => setRavenHop(true), 10)
+    later(() => setRavenHop(true), 10)
   }
 
-  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-  const cols = ['#ff2244', '#1aa8ff', '#62d5ff', '#ffffff', '#7c3aed'];
 
   const triggerGlitch = (f: string) => {
     setGlitching(prev => ({ ...prev, [f]: false }))
@@ -87,12 +103,12 @@ export default function InscripcionPage() {
     setBlocksMap(prev => ({ ...prev, [f]: newBlocks }))
     
     setShake(false)
-    setTimeout(() => {
+    later(() => {
       setGlitching(prev => ({ ...prev, [f]: true }))
       setShake(true)
     }, 10)
 
-    setTimeout(() => {
+    later(() => {
       setGlitching(prev => ({ ...prev, [f]: false }))
       setShake(false)
       setBlocksMap(prev => ({ ...prev, [f]: [] }))
@@ -122,10 +138,10 @@ export default function InscripcionPage() {
       const nx = idx < F.length - 1 ? F[idx+1] : 'rday';
       // Reveal next field
       const nextStep = idx + 1; // 0→1, 1→2, 2→3, 3→4
-      setTimeout(() => {
+      later(() => {
         setRevealStep(prev => Math.max(prev, nextStep))
         // Focus next field after it appears and scroll into view
-        setTimeout(() => {
+        later(() => {
           moveTo(rowsRef.current[nx])
           const nextEl = idx < F.length - 1 ? document.getElementById(F[idx + 1]) : rowsRef.current[nx]
           if (nextEl) {
@@ -154,30 +170,30 @@ export default function InscripcionPage() {
     }
   }
 
-  const selDay = (v: string) => {
+  const selDay = (v: InscripcionPayload['asistenciaJornada']) => {
     setDay(v)
     setDone(prev => ({ ...prev, rday: true }))
     setBad(prev => ({ ...prev, rday: false }))
     setStatus(prev => ({ ...prev, rday: '✔ OK' }))
     triggerGlitch('rday')
     
-    let newWs = null
+    let newWs: InscripcionPayload['equipoDia2'] | null = null
     if (v === 'SOLO_DIA_1') {
       newWs = 'NO_IRE'
     }
     setWs(newWs)
     setStatus(prev => ({ ...prev, rws: '' }))
     
-    setTimeout(() => {
+    later(() => {
       if (v !== 'SOLO_DIA_1') {
         setRevealStep(prev => Math.max(prev, 5))
-        setTimeout(() => {
+        later(() => {
           moveTo(rowsRef.current['rws'])
           rowsRef.current['rws']?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }, 80)
       } else {
         setRevealStep(prev => Math.max(prev, 6))
-        setTimeout(() => {
+        later(() => {
           moveTo(rowsRef.current['goBtn'])
           rowsRef.current['goBtn']?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }, 80)
@@ -185,15 +201,15 @@ export default function InscripcionPage() {
     }, 450)
   }
 
-  const selWs = (v: string) => {
+  const selWs = (v: InscripcionPayload['equipoDia2']) => {
     setWs(v)
     setDone(prev => ({ ...prev, rws: true }))
     setBad(prev => ({ ...prev, rws: false }))
     setStatus(prev => ({ ...prev, rws: '✔ OK' }))
     triggerGlitch('rws')
-    setTimeout(() => {
+    later(() => {
       setRevealStep(prev => Math.max(prev, 6))
-      setTimeout(() => {
+      later(() => {
         moveTo(rowsRef.current['goBtn'])
         rowsRef.current['goBtn']?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 80)
@@ -204,16 +220,16 @@ export default function InscripcionPage() {
     let i = 0;
     setLog('')
     const next = () => {
-      if (i >= lines.length) { cb && cb(); return }
+      if (i >= lines.length) { cb?.(); return }
       setLog(prev => prev + (i ? '\n' : '') + lines[i])
       i++
-      setTimeout(next, 450)
+      later(next, 450)
     }
     next()
   }
 
   const onSubmit = async () => {
-    if (busy || honeypot) return;
+    if (busy || submittingRef.current) return;
     let ok = true;
     F.forEach(f => {
       if (!complete(f, formData[f as keyof typeof formData])) {
@@ -240,6 +256,7 @@ export default function InscripcionPage() {
     
     if (!ok) return;
     
+    submittingRef.current = true
     setBusy(true)
     setTicket(null)
     setLog('')
@@ -249,8 +266,9 @@ export default function InscripcionPage() {
       carrera: formData.carrera.trim(),
       idEstudiante: formData.id.trim(),
       correo: formData.correo.trim(),
-      asistenciaJornada: day as any,
-      equipoDia2: ws as any,
+      asistenciaJornada: day!,
+      // SOLO_DIA_1 no muestra la pregunta del día 2; el backend fuerza NO_IRE igualmente.
+      equipoDia2: ws ?? 'NO_IRE',
       sitioWeb: honeypot || undefined,
     }
     
@@ -261,17 +279,18 @@ export default function InscripcionPage() {
       setTicket({
         code: '',
         nombre: payload.nombreUsuario,
-        jornada: LABD[day!],
-        laptop: LABW[ws!]
+        jornada: LABD[payload.asistenciaJornada],
+        laptop: LABW[payload.equipoDia2]
       })
       // Phase timing: skull 3.5s → vulnerability 6s → recovery 5s → recovered 2s = 16.5s total
       setHackPhase(1)
-      setTimeout(() => setHackPhase(2), 3500)
-      setTimeout(() => setHackPhase(3), 9500)
-      setTimeout(() => setHackPhase(4), 14500)
-      setTimeout(() => {
+      later(() => setHackPhase(2), 3500)
+      later(() => setHackPhase(3), 9500)
+      later(() => setHackPhase(4), 14500)
+      later(() => {
         setHackPhase(5)
         setBusy(false)
+        submittingRef.current = false
       }, 16500)
     } else {
       typeLog(['> verificando credenciales...', '> generando token de acceso...', '> ACCESS DENIED X'], () => {
@@ -297,13 +316,21 @@ export default function InscripcionPage() {
           setLog('> ACCESO DENEGADO: ' + response.error)
         }
         setBusy(false)
+        submittingRef.current = false
       })
     }
   }
 
   useEffect(() => {
-    setTimeout(() => moveTo(rowsRef.current['nombre']), 100)
-    return () => abortControllerRef.current?.abort()
+    later(() => moveTo(rowsRef.current['nombre']), 100)
+    const timers = timersRef.current
+    return () => {
+      abortControllerRef.current?.abort()
+      timers.forEach(clearTimeout)
+      timers.clear()
+    }
+    // Solo al montar: moveTo/later usan refs y setters estables.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onDots = Math.round(xpVal / 10)
@@ -323,9 +350,8 @@ export default function InscripcionPage() {
   const showThankYou = hackPhase === 5 && ticket;
 
   return (
-    <main className="min-h-screen py-10 px-4 flex justify-center items-start bg-black">
+    <main className={`${pressStart.variable} ${vt323.variable} min-h-screen py-10 px-4 flex justify-center items-start bg-black`}>
       <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
         
         #ra {
           --bg: #010204;
@@ -337,7 +363,7 @@ export default function InscripcionPage() {
           background: var(--bg);
           border: 2px solid var(--ac);
           padding: 0 0 18px;
-          font-family: 'VT323', monospace;
+          font-family: var(--font-vt323), monospace;
           color: var(--tx);
           position: relative;
           overflow: visible;
@@ -346,15 +372,15 @@ export default function InscripcionPage() {
         }
         #ra.shake { animation: shk .5s steps(1) 1; }
         @keyframes shk { 0% { transform: translate(0,0) } 15% { transform: translate(-4px,2px) } 30% { transform: translate(5px,-2px) } 45% { transform: translate(-3px,-3px) } 60% { transform: translate(4px,3px) } 80% { transform: translate(-2px,1px) } 100% { transform: none } }
-        #ra .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 2px solid var(--ac); font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--ac); }
+        #ra .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 2px solid var(--ac); font-family: var(--font-press), monospace; font-size: 11px; color: var(--ac); }
         #ra .dot { width: 10px; height: 10px; background: var(--mut); }
-        #ra .xp { padding: 12px 20px 0 64px; font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--ac2); display: flex; gap: 10px; align-items: center; }
+        #ra .xp { padding: 12px 20px 0 64px; font-family: var(--font-press), monospace; font-size: 11px; color: var(--ac2); display: flex; gap: 10px; align-items: center; }
         #ra .xpb { display: flex; gap: 3px; }
         #ra .xpb i { width: 12px; height: 12px; background: #16212b; display: block; }
         #ra .xpb i.on { background: var(--ac2); }
         #ra form { position: relative; padding: 8px 24px 0 64px; }
         #ra .row { margin-top: 14px; }
-        #ra .lab { display: flex; justify-content: space-between; font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--ac); margin-bottom: 6px; line-height: 1.6; }
+        #ra .lab { display: flex; justify-content: space-between; font-family: var(--font-press), monospace; font-size: 11px; color: var(--ac); margin-bottom: 6px; line-height: 1.6; }
         #ra .q { font-size: 20px; color: var(--tx); margin: 0 0 8px; }
         #ra .st { color: var(--ac2); font-size: 11px; }
         #ra .st.err { color: var(--hot); }
@@ -362,7 +388,7 @@ export default function InscripcionPage() {
         #ra .box:focus-within { border-color: var(--ac2); }
         #ra .row.done .box, #ra .row.done .opts { border-color: var(--ac); }
         #ra .row.bad .box, #ra .row.bad .opts { border-color: var(--hot); }
-        #ra input { display: block; width: 100%; box-sizing: border-box; height: auto; border: none; background: transparent; box-shadow: none; border-radius: 0; padding: 6px 10px; font-family: 'VT323', monospace; font-size: 22px; color: var(--tx); outline: none; }
+        #ra input { display: block; width: 100%; box-sizing: border-box; height: auto; border: none; background: transparent; box-shadow: none; border-radius: 0; padding: 6px 10px; font-family: var(--font-vt323), monospace; font-size: 22px; color: var(--tx); outline: none; }
         #ra input::placeholder { color: var(--mut); }
         #ra .opts { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
         
@@ -375,22 +401,23 @@ export default function InscripcionPage() {
         .mb { position: absolute; pointer-events: none; opacity: 0; z-index: 2; animation: mbk .5s steps(3) forwards; animation-delay: var(--d); }
         @keyframes mbk { 0% { opacity: 0; transform: translateX(0); } 12% { opacity: .95; } 65% { opacity: .95; transform: translateX(var(--dx)); } 100% { opacity: 0; transform: translateX(calc(var(--dx)*1.7)); } }
         
-        #ra .opt { font-family: 'Press Start 2P', monospace; font-size: 11px; line-height: 1.6; text-align: left; padding: 10px; background: #0f1620; border: 2px solid var(--mut); border-radius: 0; color: var(--tx); cursor: pointer; height: auto; box-shadow: 4px 4px 0 #16212b; transition: border-color 0.2s, background 0.2s; }
+        #ra .opt { font-family: var(--font-press), monospace; font-size: 11px; line-height: 1.6; text-align: left; padding: 10px; background: #0f1620; border: 2px solid var(--mut); border-radius: 0; color: var(--tx); cursor: pointer; height: auto; box-shadow: 4px 4px 0 #16212b; transition: border-color 0.2s, background 0.2s; }
         #ra .opt:hover { border-color: var(--ac2); }
         #ra .opt.sel { border-color: var(--ac); background: #12261c; }
-        #ra .opt small { display: block; font-family: 'VT323', monospace; font-size: 18px; color: var(--mut); margin-top: 4px; }
+        #ra .opt small { display: block; font-family: var(--font-vt323), monospace; font-size: 18px; color: var(--mut); margin-top: 4px; }
         #ra .opt.sel small { color: var(--ac2); }
         #ra .tag { color: var(--hot); }
         
-        #ra .go { font-family: 'Press Start 2P', monospace; font-size: 12px; background: var(--ac); color: #04140b; border: 2px solid var(--ac); border-radius: 0; padding: 12px 18px; cursor: pointer; height: auto; box-shadow: 4px 4px 0 #16212b; }
+        #ra .go { font-family: var(--font-press), monospace; font-size: 12px; background: var(--ac); color: #04140b; border: 2px solid var(--ac); border-radius: 0; padding: 12px 18px; cursor: pointer; height: auto; box-shadow: 4px 4px 0 #16212b; }
+        #ra .opt:focus-visible, #ra .go:focus-visible, #ra input:focus-visible { outline: 2px solid var(--ac2); outline-offset: 2px; }
         #ra .go:hover { background: var(--ac2); border-color: var(--ac2); }
         #ra .go:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #16212b; }
         
         #ra .log { font-size: 20px; color: var(--ac); margin-top: 14px; white-space: pre-wrap; }
         
         #ra .thank-you { padding: 24px 14px; text-align: center; }
-        #ra .thank-you .ty-title { font-family: 'Press Start 2P', monospace; font-size: 14px; color: var(--ac); margin-bottom: 16px; display: block; }
-        #ra .thank-you .ty-sub { font-family: 'Press Start 2P', monospace; font-size: 24px; color: var(--tx); display: block; letter-spacing: 2px; text-shadow: 0 0 20px rgba(98,213,255,0.4); }
+        #ra .thank-you .ty-title { font-family: var(--font-press), monospace; font-size: 14px; color: var(--ac); margin-bottom: 16px; display: block; }
+        #ra .thank-you .ty-sub { font-family: var(--font-press), monospace; font-size: 24px; color: var(--tx); display: block; letter-spacing: 2px; text-shadow: 0 0 20px rgba(98,213,255,0.4); }
         
         #raven { position: absolute; left: 14px; top: 60px; transition: top .5s cubic-bezier(.3,1.6,.5,1); color: var(--ac2); z-index: 3; }
         #raven img { display: block; height: 40px; width: auto; image-rendering: pixelated; }
@@ -414,7 +441,7 @@ export default function InscripcionPage() {
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span style={{ cursor: 'default' }}>-</span>
             <span style={{ display: 'inline-block', width: '9px', height: '9px', border: '2px solid currentColor', cursor: 'default' }}></span>
-            <a href="/" style={{ textDecoration: 'none', color: 'inherit' }} title="Cerrar">X</a>
+            <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }} title="Cerrar">X</Link>
           </div>
         </div>
         
@@ -432,12 +459,17 @@ export default function InscripcionPage() {
         
         <div id="raven" style={{ top: `${ravenTop}px` }} className={ravenHop ? 'hop' : ''} ref={ravenRef}>
           <div>
-            <img src="/cuervo_gif.gif" alt="" />
+            <Image src="/cuervo_gif.gif" alt="" width={398} height={401} unoptimized />
           </div>
         </div>
         
-        <form id="frm" autoComplete="off" onSubmit={(e) => e.preventDefault()}>
-          <input type="text" style={{ display: 'none' }} value={honeypot} onChange={(e) => setHoneypot(e.target.value)} tabIndex={-1} />
+        <form id="frm" autoComplete="off" noValidate onSubmit={(e) => { e.preventDefault(); onSubmit() }}>
+          {/* Honeypot: fuera de pantalla (no display:none, que muchos bots detectan), oculto a lectores
+              de pantalla y sin autocompletado. Si viene lleno, el backend responde éxito sin guardar. */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+            <label htmlFor="hp_sitio">No llenar este campo</label>
+            <input id="hp_sitio" name="hp_sitio" type="text" autoComplete="off" tabIndex={-1} value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
+          </div>
 
           {F.map((f, fIdx) => {
             // Progressive reveal: only show field if revealStep >= its index
@@ -450,15 +482,21 @@ export default function InscripcionPage() {
               ref={el => { rowsRef.current[f] = el }}
             >
               <div className="lab">
-                <span>&gt; {f === 'nombre' ? 'nombre_usuario' : (f === 'id' ? 'id_estudiante' : f)}:</span>
-                <span className={`st ${bad[f] ? 'err' : ''}`}>{status[f]}</span>
+                <label htmlFor={f}>&gt; {f === 'nombre' ? 'nombre_usuario' : (f === 'id' ? 'id_estudiante' : f)}:</label>
+                <span id={`${f}-st`} className={`st ${bad[f] ? 'err' : ''}`} role={bad[f] ? 'alert' : undefined}>{status[f]}</span>
               </div>
               <div className="box">
                 <input 
                   id={f}
+                  name={f}
+                  type={f === 'correo' ? 'email' : 'text'}
+                  autoComplete={f === 'nombre' ? 'name' : (f === 'correo' ? 'email' : 'off')}
+                  required
+                  aria-invalid={bad[f] ? true : undefined}
+                  aria-describedby={status[f] ? `${f}-st` : undefined}
                   value={formData[f as keyof typeof formData]}
                   placeholder={f === 'nombre' ? 'Nombre y apellidos' : (f === 'carrera' ? 'Ingeniería de Sistemas' : (f === 'id' ? '000253567' : 'nombre@upao.edu.pe'))}
-                  inputMode={f === 'id' ? 'numeric' : 'text'}
+                  inputMode={f === 'id' ? 'numeric' : (f === 'correo' ? 'email' : 'text')}
                   maxLength={f === 'id' ? 9 : 150}
                   onFocus={() => moveTo(rowsRef.current[f])}
                   onBlur={(e) => { if (e.target.value.trim()) complete(f, e.target.value) }}
@@ -484,17 +522,17 @@ export default function InscripcionPage() {
             ref={el => { rowsRef.current['rday'] = el }}
           >
             <div className="lab">
-              <span>&gt; asistencia_jornada:</span>
-              <span className={`st ${bad['rday'] ? 'err' : ''}`}>{status['rday']}</span>
+              <span id="rday-lab">&gt; asistencia_jornada:</span>
+              <span id="rday-st" className={`st ${bad['rday'] ? 'err' : ''}`} role={bad['rday'] ? 'alert' : undefined}>{status['rday']}</span>
             </div>
-            <div className="opts" id="days">
-              <button type="button" className={`opt ${day === 'AMBOS_DIAS' ? 'sel' : ''}`} aria-label="Asistiré ambos días" onClick={() => selDay('AMBOS_DIAS')}>
+            <div className="opts" id="days" role="group" aria-labelledby="rday-lab" aria-describedby={status['rday'] ? 'rday-st' : undefined}>
+              <button type="button" className={`opt ${day === 'AMBOS_DIAS' ? 'sel' : ''}`} aria-pressed={day === 'AMBOS_DIAS'} onClick={() => selDay('AMBOS_DIAS')}>
                 AMBOS DÍAS<small><span className="tag">★ recomendado</span></small>
               </button>
-              <button type="button" className={`opt ${day === 'SOLO_DIA_1' ? 'sel' : ''}`} aria-label="Solo asistiré el día 1" onClick={() => selDay('SOLO_DIA_1')}>
+              <button type="button" className={`opt ${day === 'SOLO_DIA_1' ? 'sel' : ''}`} aria-pressed={day === 'SOLO_DIA_1'} onClick={() => selDay('SOLO_DIA_1')}>
                 SOLO DÍA 1<small>solo día 1</small>
               </button>
-              <button type="button" className={`opt ${day === 'SOLO_DIA_2' ? 'sel' : ''}`} aria-label="Solo asistiré el día 2" onClick={() => selDay('SOLO_DIA_2')}>
+              <button type="button" className={`opt ${day === 'SOLO_DIA_2' ? 'sel' : ''}`} aria-pressed={day === 'SOLO_DIA_2'} onClick={() => selDay('SOLO_DIA_2')}>
                 SOLO DÍA 2<small>solo día 2</small>
               </button>
               {renderGlitchBlocks('rday')}
@@ -510,19 +548,19 @@ export default function InscripcionPage() {
             ref={el => { rowsRef.current['rws'] = el }}
           >
             <div className="lab">
-              <span>&gt; equipo_dia_2:</span>
-              <span className={`st ${bad['rws'] ? 'err' : ''}`}>{status['rws']}</span>
+              <span id="rws-lab">&gt; equipo_dia_2:</span>
+              <span id="rws-st" className={`st ${bad['rws'] ? 'err' : ''}`} role={bad['rws'] ? 'alert' : undefined}>{status['rws']}</span>
             </div>
             <p className="q">El Día 2 realizaremos talleres de hacking web y análisis de logs.</p>
-            <div className="opts" id="wss">
-              <button type="button" className={`opt ${ws === 'MI_LAPTOP' ? 'sel' : ''}`} aria-label="Llevaré mi propia laptop" onClick={() => selWs('MI_LAPTOP')}>
+            <div className="opts" id="wss" role="group" aria-labelledby="rws-lab" aria-describedby={status['rws'] ? 'rws-st' : undefined}>
+              <button type="button" className={`opt ${ws === 'MI_LAPTOP' ? 'sel' : ''}`} aria-pressed={ws === 'MI_LAPTOP'} onClick={() => selWs('MI_LAPTOP')}>
                 MI LAPTOP<small>llevaré mi propia laptop</small>
               </button>
-              <button type="button" className={`opt ${ws === 'SIN_LAPTOP' ? 'sel' : ''}`} aria-label="No tengo laptop, pero mi compañero asistirá y podemos formar grupo de 2" onClick={() => selWs('SIN_LAPTOP')}>
+              <button type="button" className={`opt ${ws === 'SIN_LAPTOP' ? 'sel' : ''}`} aria-pressed={ws === 'SIN_LAPTOP'} onClick={() => selWs('SIN_LAPTOP')}>
                 SIN LAPTOP<small>formaré grupo de 2</small>
               </button>
               {day !== 'SOLO_DIA_2' && (
-                <button type="button" className={`opt ${ws === 'NO_IRE' ? 'sel' : ''}`} aria-label="No asistiré el día 2" onClick={() => selWs('NO_IRE')}>
+                <button type="button" className={`opt ${ws === 'NO_IRE' ? 'sel' : ''}`} aria-pressed={ws === 'NO_IRE'} onClick={() => selWs('NO_IRE')}>
                   NO IRÉ<small>no asistiré el día 2</small>
                 </button>
               )}
@@ -534,7 +572,7 @@ export default function InscripcionPage() {
           {/* Submit button - visible when revealStep >= 6 */}
           {revealStep >= 6 && (
           <div className="row" style={{ display: 'flex', justifyContent: 'flex-end' }} ref={el => { rowsRef.current['goBtn'] = el }}>
-            <button type="button" className="go" id="go" onClick={onSubmit} disabled={busy}>
+            <button type="submit" className="go" id="go" disabled={busy} aria-busy={busy}>
               {busy ? 'Procesando...' : 'Inscribirme'}
             </button>
           </div>
@@ -628,7 +666,7 @@ export default function InscripcionPage() {
 ╚═╝  ╚═╝ ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝`}
             </pre>
             <span style={{ 
-              fontFamily: '"Press Start 2P", monospace', 
+              fontFamily: 'var(--font-press), monospace', 
               fontSize: '12px', 
               color: 'var(--ac2)', 
               textAlign: 'center', 
@@ -650,7 +688,7 @@ export default function InscripcionPage() {
 function HackCinematic({ phase }: { phase: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [loadingDots, setLoadingDots] = useState(0)
-  const [errorItems, setErrorItems] = useState<{id: number, top: string, left: string, delay: string, scale: number, text: string}[]>([])
+  const [errorItems, setErrorItems] = useState<{id: number, top: string, left: string, delay: string, scale: number, text: string, size: number}[]>([])
 
   // Canvas-based datamosh corruption (phases 1 & 2)
   useEffect(() => {
@@ -769,7 +807,7 @@ function HackCinematic({ phase }: { phase: number }) {
 
   // Spawn error messages continuously during phase 2
   useEffect(() => {
-    if (phase !== 2) { setErrorItems([]); return }
+    if (phase !== 2) return
     const errorTexts = [
       'ERROR', 'CRITICAL FAILURE', 'ACCESS DENIED', 'BREACH DETECTED',
       'MALWARE FOUND', 'FIREWALL DOWN', 'DATA CORRUPTED', 'OVERFLOW',
@@ -788,9 +826,11 @@ function HackCinematic({ phase }: { phase: number }) {
         delay: `${(Math.random() * 1.5).toFixed(2)}s`,
         scale: 0.3 + Math.random() * 1.5,
         text: errorTexts[Math.floor(Math.random() * errorTexts.length)],
+        size: 14 + Math.random() * 22,
       })
     }
-    setErrorItems(initial)
+    // Ráfaga inicial en el siguiente tick (no setState síncrono dentro del efecto)
+    const burst = setTimeout(() => setErrorItems(initial), 0)
 
     // Keep spawning new errors
     const interval = setInterval(() => {
@@ -804,12 +844,16 @@ function HackCinematic({ phase }: { phase: number }) {
           delay: `${(Math.random() * 0.3).toFixed(2)}s`,
           scale: 0.3 + Math.random() * 1.5,
           text: errorTexts[Math.floor(Math.random() * errorTexts.length)],
+          size: 14 + Math.random() * 22,
         })
       }
       setErrorItems(prev => [...prev.slice(-80), ...batch])
     }, 400)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(burst)
+      clearInterval(interval)
+    }
   }, [phase])
 
   // Loading dots for phase 3
@@ -846,9 +890,11 @@ function HackCinematic({ phase }: { phase: number }) {
           position: 'absolute', inset: 0, zIndex: 10,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <img
+          <Image
             src="/calavera.png"
             alt=""
+            width={500}
+            height={500}
             className="candado-glitch"
             style={{
               maxWidth: '70vw', maxHeight: '70vh', objectFit: 'contain',
@@ -868,7 +914,7 @@ function HackCinematic({ phase }: { phase: number }) {
               transform: `scale(${e.scale})`,
               animationDelay: e.delay,
               zIndex: 5,
-              fontSize: `${14 + Math.random() * 22}px`,
+              fontSize: `${e.size}px`,
             }}>
               {e.text}
             </div>
@@ -894,7 +940,7 @@ function HackCinematic({ phase }: { phase: number }) {
                 data-text="EL SISTEMA ESTÁ SIENDO VULNERADO"
                 style={{
                   position: 'relative',
-                  fontFamily: '"Press Start 2P", monospace',
+                  fontFamily: 'var(--font-press), monospace',
                   fontSize: 'clamp(14px, 3.5vw, 32px)',
                   color: '#ffffff',
                   textShadow: '0 0 10px rgba(255,34,68,0.8), 0 0 30px rgba(255,0,0,0.5)',
@@ -920,7 +966,7 @@ function HackCinematic({ phase }: { phase: number }) {
           <div style={{
             background: '#010204', padding: '30px 40px',
             border: '2px solid #62d5ff', textAlign: 'center',
-            fontFamily: '"Press Start 2P", monospace',
+            fontFamily: 'var(--font-press), monospace',
             boxShadow: '0 0 30px rgba(98,213,255,0.2)',
           }}>
             <div style={{ color: '#1aa8ff', marginBottom: '15px', fontSize: '14px' }}>recuperando sistema ...</div>
@@ -940,7 +986,7 @@ function HackCinematic({ phase }: { phase: number }) {
           <div style={{
             background: '#010204', padding: '30px 40px',
             border: '2px solid #39ff88', textAlign: 'center',
-            fontFamily: '"Press Start 2P", monospace',
+            fontFamily: 'var(--font-press), monospace',
             boxShadow: '0 0 30px rgba(57,255,136,0.2)',
           }}>
             <div style={{ color: '#39ff88', fontSize: '18px' }}>sistema recuperado</div>

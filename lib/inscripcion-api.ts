@@ -23,7 +23,12 @@ export interface InscripcionResponse {
 export async function enviarInscripcion(payload: InscripcionPayload, signal?: AbortSignal): Promise<InscripcionResponse> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  // Modo demo (sin backend)
+  // Modo demo (sin backend): solo en desarrollo. En producción, una variable olvidada
+  // NO debe mostrar inscripciones "exitosas" que nunca se guardaron.
+  if (!apiUrl && process.env.NODE_ENV === 'production') {
+    console.error('NEXT_PUBLIC_API_URL no está definida en producción');
+    return { success: false, error: "El servicio de inscripción no está disponible, intenta más tarde" };
+  }
   if (!apiUrl) {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -54,21 +59,30 @@ export async function enviarInscripcion(payload: InscripcionPayload, signal?: Ab
       signal,
     });
 
-    const data = await response.json();
+    // Un proxy o un error 5xx pueden devolver HTML: no asumir que la respuesta es JSON.
+    let data: Record<string, unknown> = {};
+    try {
+      const parsed = await response.json();
+      if (parsed && typeof parsed === 'object') data = parsed as Record<string, unknown>;
+    } catch {
+      /* cuerpo vacío o no JSON */
+    }
+    const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 
     if (response.status === 201) {
-      return { success: true, nombreUsuario: data.nombreUsuario, mensaje: data.mensaje };
+      return { success: true, nombreUsuario: str(data.nombreUsuario), mensaje: str(data.mensaje) };
     }
 
     if (response.status === 409) {
-      return { success: false, error: data.error || "Ya existe una inscripción con estos datos" };
+      return { success: false, error: str(data.error) || "Ya existe una inscripción con estos datos" };
     }
 
-    if (response.status === 400 && data.detalles) {
+    if (response.status === 400 && Array.isArray(data.detalles)) {
       // El backend devuelve { error: "...", detalles: ["campo: mensaje", ...] }
       // Parseamos a un mapa campo → mensaje para marcar cada campo en el form
       const validationErrors: ErrorValidacion = {};
       for (const detalle of data.detalles) {
+        if (typeof detalle !== 'string') continue;
         const idx = detalle.indexOf(': ');
         if (idx !== -1) {
           const campo = detalle.substring(0, idx);
@@ -76,16 +90,23 @@ export async function enviarInscripcion(payload: InscripcionPayload, signal?: Ab
           validationErrors[campo] = msg;
         }
       }
-      return { success: false, error: data.error, validationErrors };
+      return { success: false, error: str(data.error), validationErrors };
     }
 
     if (response.status === 400) {
-      return { success: false, error: data.error || "Datos inválidos" };
+      return { success: false, error: str(data.error) || "Datos inválidos" };
+    }
+
+    if (response.status === 429) {
+      return { success: false, error: "Demasiados intentos. Espera un minuto e intenta de nuevo" };
     }
 
     // Cualquier otro error (413, 415, 500, etc.)
     return { success: false, error: "No se pudo completar la inscripción, intenta de nuevo" };
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return { success: false, error: "Solicitud cancelada" };
+    }
     return { success: false, error: "No se pudo conectar con el servidor, intenta de nuevo" };
   }
 }

@@ -726,7 +726,7 @@ a { color: inherit; text-decoration: none; }
 /* Speaker Candado Glitch */
 .candado-wrapper { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 .candado-glitch { width: 100%; height: 100%; object-fit: contain; animation: candadoGlitchBase 4s infinite; }
-.candado-wrapper::before, .candado-wrapper::after { content: ''; position: absolute; inset: 0; background-image: url('/candado.png'); background-size: contain; background-position: center; background-repeat: no-repeat; opacity: 0; pointer-events: none; }
+.candado-wrapper::before, .candado-wrapper::after { content: ''; position: absolute; inset: 0; background-image: url('/candado.webp'); background-size: contain; background-position: center; background-repeat: no-repeat; opacity: 0; pointer-events: none; }
 .candado-wrapper::before { animation: candadoGlitchRGB1 5s infinite linear alternate-reverse; }
 .candado-wrapper::after { animation: candadoGlitchRGB2 4s infinite linear alternate-reverse; }
 
