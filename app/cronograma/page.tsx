@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/cronograma' },
 }
 
-/* Fuente: "Organizacion Root Access.xlsx", hojas Cronograma y Ponentes. */
+/* Fuente: "Organizacion Root Access (1).xlsx" (10/11/2026), hojas Cronograma, Ponentes y Paneles. */
 
 type Kind = 'Apertura' | 'Inauguración' | 'Conferencia' | 'Pausa' | 'Almuerzo' | 'Taller práctico' | 'Cierre' | 'Clausura'
 
@@ -21,46 +21,69 @@ type Item = {
   who: string
   org?: string
   url?: string
-  /** Ponente aún no confirmado según la hoja Ponentes */
+  /** Ponente aún no confirmado según la columna "Confirmado" del cronograma */
   pending?: boolean
+  /** Modalidad virtual según la columna "Modalidad" */
+  virtual?: boolean
 }
 
 const COMITE = 'Comité Organizador RootAccess'
 
+const PANEL_ORG = 'Estudiantes de Ingeniería de Sistemas · UPAO'
+
 const day1Morning: Item[] = [
-  { start: '08:00', end: '08:30', kind: 'Apertura', title: 'Ingreso y recepción de asistentes (amenizado por la Orquesta Sinfónica de la UPAO)', who: 'Orquesta Sinfónica de la UPAO y Comité Organizador' },
-  { start: '08:30', end: '09:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO y Dirección de Escuela ISIA' },
-  { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Ciberseguridad y resiliencia tecnológica en el sector minero', who: 'José Ishikawa Delgado', org: 'Gerente · Minera Goldfields' },
-  { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Ciberseguridad y continuidad operativa en la cadena agroindustrial', who: 'Carlos Alexis Pérez Rojas', org: 'Gerente de TI y Transformación Digital · Virú Group', url: 'https://www.linkedin.com/in/carlos-p%C3%A9rez-rojas-070777/' },
+  { start: '08:30', end: '08:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: 'Orquesta Sinfónica de la UPAO y Comité Organizador' },
+  { start: '08:45', end: '09:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Vladimir Urrelo) y Dirección de Escuela ISIA' },
+  { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 1', org: PANEL_ORG },
+  { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Prevención de fraudes digitales y ciberseguridad en el sector microfinanciero', who: 'Nancy Tirado Merino', org: 'Caja Trujillo', url: 'https://www.linkedin.com/in/nancy-t-957434138/' },
   { start: '11:00', end: '11:15', kind: 'Pausa', title: 'Coffee break técnico y networking de asistentes', who: COMITE },
-  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'Prevención de fraudes digitales y ciberseguridad en el sector microfinanciero', who: 'Reynaldo Rodriguez Garcia', org: 'Oficial de Seguridad · Caja Trujillo', url: 'https://www.linkedin.com/in/reynaldo-rodriguez-garc%C3%ADa-49b26189/' },
-  { start: '12:15', end: '13:15', kind: 'Conferencia', title: 'Estrategias de ciberdefensa ofensiva y gestión de vulnerabilidades empresariales', who: 'Cesar Augusto Farro Flores', org: 'Founder & CEO · NPROS Cyber Tech LATAM', url: 'https://www.linkedin.com/in/cesar-farro-flores/' },
+  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'Ciberdelitos, leyes y casos', who: 'Dr. Lenin Araujo', org: 'Fiscalía' },
+  { start: '12:15', end: '13:15', kind: 'Conferencia', title: 'Ciberseguridad y resiliencia tecnológica en el sector minero', who: 'José Ishikawa Delgado', org: 'Gerente · Minera Gold Fields', virtual: true },
   { start: '13:15', end: '14:30', kind: 'Almuerzo', title: 'Receso de almuerzo libre e intercambio profesional', who: COMITE },
 ]
 
 const day1Afternoon: Item[] = [
   { start: '14:30', end: '16:30', kind: 'Taller práctico', title: 'Análisis forense digital e investigación con Autopsy', who: 'Alonso Eduardo Caballero Quezada', org: 'Consultor y especialista en ciberseguridad', url: 'https://www.linkedin.com/in/alonsocaballeroquezada/' },
   { start: '16:30', end: '16:45', kind: 'Pausa', title: 'Pausa activa y receso técnico', who: COMITE },
-  { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Hardening y bastionado de servidores en infraestructuras críticas', who: 'Jesus Rosales', org: 'Consultor en ciberseguridad · México', url: 'https://www.linkedin.com/in/jesus-rosales-salinas/', pending: true },
+  { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Fundamentos para el análisis de malware: pensar como un analista', who: 'Grover Cordova', org: 'CEO & Founder · Security Labs' },
   { start: '18:45', end: '19:00', kind: 'Cierre', title: 'Cierre y balance de la primera jornada RootAccess', who: COMITE },
 ]
 
 const day2Morning: Item[] = [
-  { start: '08:30', end: '09:00', kind: 'Apertura', title: 'Recepción de asistentes, registro y resumen ejecutivo del Día 1', who: COMITE },
-  { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Gobierno corporativo de ciberseguridad, compliance y gestión del riesgo CISO', who: 'Fiorella D. (virtual)', org: 'CISO · Ferreyros', url: 'https://www.linkedin.com/in/fiorella-d-9b80051a/' },
-  { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Investigación de delitos informáticos y cadena de custodia de evidencia digital', who: 'Autoridad PNP', org: 'Fiscalía Especializada', pending: true },
+  { start: '08:30', end: '08:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: COMITE },
+  { start: '08:45', end: '09:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Jaime Díaz) y Dirección de Escuela ISIA' },
+  { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Ciberseguridad, cloud, infraestructura e IA', who: 'Sandra Castillo', org: 'Huawei' },
+  { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Ciberseguridad y continuidad operativa en la cadena agroindustrial', who: 'Carlos Alexis Pérez Rojas', org: 'Gerente de TI y Transformación Digital · Virú Group', url: 'https://www.linkedin.com/in/carlos-p%C3%A9rez-rojas-070777/' },
   { start: '11:00', end: '11:15', kind: 'Pausa', title: 'Coffee break y networking tecnológico', who: COMITE },
-  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'Protección de infraestructuras críticas y ciberseguridad en entornos OT/ICS', who: 'Betsy Córdova Veliz', org: 'Jefa de Seguridad de la Información · ENGIE', url: 'https://www.linkedin.com/in/betsy-cordova-veliz/', pending: true },
-  { start: '12:15', end: '13:15', kind: 'Conferencia', title: 'Conferencia magistral: IA generativa y automatización en la ciberdefensa', who: 'Panel de expertos y especialistas RootAccess UPAO' },
-  { start: '13:15', end: '14:30', kind: 'Almuerzo', title: 'Receso de almuerzo libre y networking', who: COMITE },
+  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 2', org: PANEL_ORG },
+  { start: '12:15', end: '13:15', kind: 'Conferencia', title: 'Conferencia magistral: IA generativa y automatización en la ciberdefensa', who: 'Jesus Rosales', org: 'Consultor en ciberseguridad · México', url: 'https://www.linkedin.com/in/jesus-rosales-salinas/', virtual: true },
+  { start: '13:15', end: '14:30', kind: 'Almuerzo', title: 'Receso de almuerzo libre', who: COMITE },
 ]
 
 const day2Afternoon: Item[] = [
-  { start: '14:30', end: '16:30', kind: 'Taller práctico', title: 'Arquitectura y despliegue de monitoreo centralizado con Wazuh SIEM', who: 'Edward Vega Gavidia', org: 'Profesor universitario', url: 'https://www.linkedin.com/in/edward-vega-gavidia/' },
+  { start: '14:30', end: '15:30', kind: 'Conferencia', title: 'Fortinet, tecnología de ciberseguridad, SOC y la IA', who: 'Ing. Jorge Vigil', org: 'Fortinet Perú', virtual: true },
+  { start: '15:30', end: '16:30', kind: 'Conferencia', title: 'Estrategias de ciberdefensa ofensiva y gestión de vulnerabilidades empresariales', who: 'Cesar Augusto Farro Flores', org: 'Founder & CEO · NPROS Cyber Tech LATAM', url: 'https://www.linkedin.com/in/cesar-farro-flores/' },
   { start: '16:30', end: '16:45', kind: 'Pausa', title: 'Pausa activa y receso técnico', who: COMITE },
-  { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Simulación de ciberataques en entornos corporativos (Red Team)', who: 'Grover Cordova', org: 'CEO & Founder · Security Labs' },
-  { start: '18:45', end: '19:15', kind: 'Clausura', title: 'Ceremonia oficial de clausura, entrega de certificados y reconocimientos', who: 'Autoridades UPAO y Comité Organizador' },
+  { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Arquitectura y despliegue de monitoreo centralizado con Wazuh SIEM', who: 'Edward Vega Gavidia', org: 'Profesor universitario', url: 'https://www.linkedin.com/in/edward-vega-gavidia/' },
+  { start: '18:45', end: '19:15', kind: 'Clausura', title: 'Ceremonia oficial de clausura, entrega de certificados y reconocimientos', who: 'Autoridades UPAO (Ing. Jaime Díaz / Ing. Vladimir Urrelo) y Comité Organizador' },
 ]
+
+/** Horas netas por tipo, calculadas desde los horarios para que nunca se desfasen del cronograma. */
+function hoursOf(items: Item[], kind: Kind) {
+  const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+  return items.filter((it) => it.kind === kind).reduce((acc, it) => acc + toMin(it.end) - toMin(it.start), 0) / 60
+}
+
+const fmtH = (h: number) => `${Number.isInteger(h) ? h : h.toFixed(1)} h`
+
+function summary(items: Item[]) {
+  return { conf: hoursOf(items, 'Conferencia'), taller: hoursOf(items, 'Taller práctico') }
+}
+
+const day1Totals = summary([...day1Morning, ...day1Afternoon])
+const day2Totals = summary([...day2Morning, ...day2Afternoon])
+const totalConf = day1Totals.conf + day2Totals.conf
+const totalTaller = day1Totals.taller + day2Totals.taller
 
 const KIND_COLOR: Record<Kind, string> = {
   Apertura: '#8a98a4',
@@ -99,6 +122,11 @@ function ScheduleBlock({ items }: { items: Item[] }) {
                   </a>
                 ) : <span style={{ color: isBreak ? '#8a98a4' : '#d6e2ea' }}>{it.who}</span>}
                 {it.org && <span>· {it.org}</span>}
+                {it.virtual && (
+                  <span style={{ color: '#60a5fa', border: '1px solid rgba(96,165,250,.35)', borderRadius: '4px', padding: '0 6px', font: 'bold 10px monospace', letterSpacing: '0.08em' }}>
+                    VIRTUAL
+                  </span>
+                )}
                 {it.pending && (
                   <span style={{ color: '#fbbf24', border: '1px solid rgba(251,191,36,.35)', borderRadius: '4px', padding: '0 6px', font: 'bold 10px monospace', letterSpacing: '0.08em' }}>
                     POR CONFIRMAR
@@ -114,10 +142,13 @@ function ScheduleBlock({ items }: { items: Item[] }) {
 }
 
 function DaySchedule({ theme, morning, afternoon }: { theme: string; morning: Item[]; afternoon: Item[] }) {
+  const all = [...morning, ...afternoon]
+  const t = summary(all)
+  const talleres = all.filter((it) => it.kind === 'Taller práctico').length
   return (
     <>
       <p style={{ textAlign: 'center', color: '#b4c0ca', font: 'bold 13px monospace', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '-25px 0 40px' }}>
-        {theme} · 4 h de conferencias + 4 h de talleres
+        {theme} · {fmtH(t.conf)} de conferencias + {fmtH(t.taller)} de {talleres === 1 ? 'taller' : 'talleres'}
       </p>
       <div className="schedule-grid">
         <div>
@@ -169,7 +200,7 @@ export default function CronogramaPage() {
         <header style={{ marginBottom: '40px' }}>
           <h1 style={{ font: '900 clamp(2.5rem, 6vw, 4rem) Arial', letterSpacing: '-0.04em', margin: 0, lineHeight: 1 }}>Cronograma<br /><span style={{ color: 'var(--cyan)' }}>Detallado.</span></h1>
           <p style={{ color: '#8a98a4', font: '14px monospace', margin: '16px 0 0' }}>
-            16 horas netas · 8 h de conferencias + 8 h de talleres prácticos
+            {fmtH(totalConf + totalTaller).replace(' h', ' horas')} netas · {fmtH(totalConf)} de conferencias + {fmtH(totalTaller)} de talleres prácticos
           </p>
         </header>
 
