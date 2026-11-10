@@ -42,6 +42,10 @@ const nextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // La inscripción ahora es por Google Forms (misma URL que lib/links.ts). Temporal (307) por si se vuelve al formulario propio.
+  async redirects() {
+    return [{ source: '/inscripcion', destination: 'https://forms.gle/A1wTM6cuhYgTfreQ7', permanent: false }]
+  },
 }
 
 export default nextConfig

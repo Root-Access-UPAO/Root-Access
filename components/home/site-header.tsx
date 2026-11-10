@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowUpRight, Menu, X } from 'lucide-react'
+import { INSCRIPCION_URL } from '@/lib/links'
 
 const NAV = [
   ['Temas', 'temas'],
@@ -25,7 +26,7 @@ export function SiteHeader() {
         {NAV.map(([label, id]) => (
           <a href={`#${id}`} key={id} onClick={() => setMenuOpen(false)}>{label}</a>
         ))}
-        <Link href="/inscripcion" className="nav-cta" onClick={() => setMenuOpen(false)}>Reservar lugar <ArrowUpRight size={15} /></Link>
+        <a href={INSCRIPCION_URL} className="nav-cta" onClick={() => setMenuOpen(false)}>Reservar lugar <ArrowUpRight size={15} /></a>
       </nav>
       <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={menuOpen} aria-controls="nav-principal">
         {menuOpen ? <X size={20} /> : <Menu size={20} />}

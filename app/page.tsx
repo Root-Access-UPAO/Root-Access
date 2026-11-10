@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { SiteHeader } from '@/components/home/site-header'
+import { INSCRIPCION_URL } from '@/lib/links'
 import { CountdownTimer, DatamoshGlitch, ElectricTitle, GlitchImage, LightningBolts } from '@/components/home/effects'
 import {
   ArrowUpRight,
@@ -57,7 +58,7 @@ export default function Page() {
             Ciberdelincuencia y resiliencia digital: el sector público y privado frente a las amenazas de la región.
           </p>
           <div className="hero-actions">
-            <Link className="button button-primary" href="/inscripcion">Inscribirme ahora <ArrowUpRight size={17} /></Link>
+            <a className="button button-primary" href={INSCRIPCION_URL}>Inscribirme ahora <ArrowUpRight size={17} /></a>
           </div>
           <div className="hero-meta"><span><CalendarDays size={15} /> 19 Y 20 NOV 2026</span><span><Globe2 size={15} /> Trujillo, Perú</span></div>
         </div>
@@ -126,9 +127,9 @@ export default function Page() {
         <div className="countdown-center">
           <CountdownTimer wrapperClass="countdown big-countdown" />
         </div>
-        <Link className="button button-primary" href="/inscripcion" style={{ fontSize: '1.2rem', padding: '15px 40px' }}>
+        <a className="button button-primary" href={INSCRIPCION_URL} style={{ fontSize: '1.2rem', padding: '15px 40px' }}>
           Inscribirme ahora <ArrowUpRight size={20} />
-        </Link>
+        </a>
       </section>
 
       <footer className="footer" id="ubicacion"><div className="footer-brand"><div className="wordmark" style={{ display: 'flex', alignItems: 'center' }}><Image src="/cuervo-logo.png" alt="" width={55} height={55} style={{ height: '55px', width: 'auto', marginRight: '15px', objectFit: 'contain' }} /><span>ROOT <b>ACCESS</b></span></div><p>Conferencia de ciberseguridad<br />Universidad Privada Antenor Orrego</p></div><div className="footer-location"><p>Campus UPAO · Trujillo, Perú<br />19 y 20 de noviembre, 2026</p></div><div className="footer-social"><a href="#instagram" aria-label="Instagram"><Globe2 size={18} /></a><a href="#linkedin" aria-label="LinkedIn"><Network size={18} /></a><a href="#top" aria-label="Volver arriba"><ArrowUpRight size={18} /></a></div><div className="footer-bottom"><span>© 2026 ROOT ACCESS</span><span>POWERED BY UPAO <Check size={14} /></span></div></footer>
