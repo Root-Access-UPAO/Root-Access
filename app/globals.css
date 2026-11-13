@@ -1038,6 +1038,8 @@ a { color: inherit; text-decoration: none; }
 .cr-who { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; color: #9aa8b4; font: 13px/1.4 Arial, sans-serif; }
 .cr-who > svg { color: var(--k); flex-shrink: 0; }
 .cr-who a, .cr-who__name { color: #e2ecf2; display: inline-flex; align-items: center; gap: 2px; }
+.cr-format { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; color: #8fa1ae; font: 12px/1.4 monospace; }
+.cr-format > svg { color: var(--k); flex-shrink: 0; }
 .cr-who a:hover { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Recesos: fila fina, sin tarjeta, para que no compitan con el contenido */

@@ -41,7 +41,7 @@ const topics: { icon: typeof ShieldCheck; code: string; title: string; text: str
     icon: ShieldCheck, code: '01', title: 'Resiliencia Sectorial',
     text: 'Cómo la minería, la agroindustria y las microfinanzas sostienen su operación frente a amenazas reales.',
     sessions: [
-      { when: 'Día 1 · 10:00', what: 'Fraudes digitales · Caja Trujillo' },
+      { when: 'Día 1 · 09:00', what: 'Fraudes digitales · Caja Trujillo' },
       { when: 'Día 2 · 10:00', what: 'Cadena agroindustrial · Virú Group' },
     ],
   },
@@ -77,7 +77,10 @@ const topics: { icon: typeof ShieldCheck; code: string; title: string; text: str
   {
     icon: Globe2, code: '06', title: 'Gobierno y Delitos',
     text: 'Ciberdelitos, marco legal y casos reales vistos desde quienes los investigan.',
-    sessions: [{ when: 'Día 1 · 11:15', what: 'Ciberdelitos, leyes y casos · Fiscalía' }],
+    sessions: [
+      { when: 'Día 1 · 10:15', what: 'Ciberdelitos, leyes y casos · Fiscalía' },
+      { when: 'Día 2 · 11:15', what: 'Fraude móvil y privacidad · Claro' },
+    ],
   },
 ]
 

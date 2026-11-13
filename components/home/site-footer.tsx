@@ -23,7 +23,7 @@ export function SiteFooter() {
           <p className="site-footer__title">Evento</p>
           <ul className="site-footer__list">
             <li><CalendarDays size={16} aria-hidden="true" /> 19 y 20 de noviembre, 2026</li>
-            <li><Clock size={16} aria-hidden="true" /> Desde las 08:30</li>
+            <li><Clock size={16} aria-hidden="true" /> Desde las 07:30</li>
             <li><MapPin size={16} aria-hidden="true" /> Campus UPAO · Trujillo, Perú</li>
           </ul>
           <a className="site-footer__maps" href={MAPS_URL} target="_blank" rel="noopener noreferrer">

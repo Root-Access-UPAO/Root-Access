@@ -1,17 +1,21 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, Coffee, Moon, Sun, UserRound, UtensilsCrossed, Video } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Coffee, MessagesSquare, Moon, Sun, UserRound, UtensilsCrossed, Video } from 'lucide-react'
 import { DaySwitcher } from '@/components/cronograma/day-switcher'
 import { LiveBadge } from '@/components/cronograma/live-clock'
 import { UpaoEscudo } from '@/components/brand/upao-logo'
 
 export const metadata: Metadata = {
   title: 'Cronograma — ROOT ACCESS',
-  description: 'Programa oficial de Root Access 2026: 16 horas de conferencias y talleres prácticos de ciberseguridad. 19 y 20 de noviembre de 2026, UPAO, Trujillo.',
+  description: 'Programa oficial de Root Access 2026: 17 horas de conferencias y talleres prácticos de ciberseguridad. 19 y 20 de noviembre de 2026, UPAO, Trujillo.',
   alternates: { canonical: '/cronograma' },
 }
 
-/* Fuente: "Organizacion Root Access (1).xlsx" (10/11/2026), hojas Cronograma, Ponentes y Paneles. */
+/* Fuente: "Organizacion Root Access (2).xlsx" (13/11/2026), hojas "Cronograma actualizado", Ponentes y Paneles. */
+
+/** Formato de cada conferencia de 1 h: exposición + ronda de preguntas. */
+const TALK_MIN = 45
+const QA_MIN = 15
 
 type Kind = 'Apertura' | 'Inauguración' | 'Conferencia' | 'Pausa' | 'Almuerzo' | 'Taller práctico' | 'Cierre' | 'Clausura'
 
@@ -34,36 +38,37 @@ const COMITE = 'Comité Organizador RootAccess'
 const PANEL_ORG = 'Estudiantes de Ingeniería de Sistemas · UPAO'
 
 const day1Morning: Item[] = [
-  { start: '08:30', end: '08:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: 'Orquesta Sinfónica de la UPAO y Comité Organizador' },
-  { start: '08:45', end: '09:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Dr. Vladimir Urrelo) y Dirección de Escuela ISIA' },
-  { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 1', org: PANEL_ORG },
-  { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Prevención de fraudes digitales y ciberseguridad en el sector microfinanciero', who: 'Nancy Tirado Merino', org: 'Caja Trujillo', url: 'https://www.linkedin.com/in/nancy-t-957434138/' },
-  { start: '11:00', end: '11:15', kind: 'Pausa', title: 'Coffee break técnico y networking de asistentes', who: COMITE },
-  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'Ciberdelitos, leyes y casos', who: 'Dr. Lenin Araujo', org: 'Fiscalía' },
-  { start: '12:15', end: '13:15', kind: 'Conferencia', title: 'Ciberseguridad y resiliencia tecnológica en el sector minero', who: 'José Ishikawa Delgado', org: 'Gerente · Minera Gold Fields', virtual: true },
-  { start: '13:15', end: '14:30', kind: 'Almuerzo', title: 'Receso de almuerzo libre e intercambio profesional', who: COMITE },
+  { start: '07:30', end: '07:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: 'Orquesta Sinfónica de la UPAO y Comité Organizador' },
+  { start: '07:45', end: '08:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Vladimir Urrelo) y Dirección de Escuela ISIA' },
+  { start: '08:00', end: '09:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 1', org: PANEL_ORG },
+  { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Prevención de fraudes digitales y ciberseguridad en el sector microfinanciero', who: 'Nancy Tirado Merino', org: 'Caja Trujillo', url: 'https://www.linkedin.com/in/nancy-t-957434138/' },
+  { start: '10:00', end: '10:15', kind: 'Pausa', title: 'Coffee break técnico y networking de asistentes', who: COMITE },
+  { start: '10:15', end: '11:15', kind: 'Conferencia', title: 'Ciberdelitos, leyes y casos', who: 'Dr. Lenin Araujo', org: 'Fiscalía', url: 'https://www.linkedin.com/in/lenin-josmel-araujo-cabanillas-9345398b/' },
+  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'Ciberseguridad y resiliencia tecnológica en el sector minero', who: 'José Ishikawa Delgado', org: 'Gerente · Minera Gold Fields', url: 'https://www.linkedin.com/in/joseishikawa/', virtual: true },
+  { start: '12:15', end: '14:30', kind: 'Almuerzo', title: 'Receso de almuerzo libre e intercambio profesional', who: COMITE },
 ]
 
 const day1Afternoon: Item[] = [
   { start: '14:30', end: '16:30', kind: 'Taller práctico', title: 'Análisis forense digital e investigación con Autopsy', who: 'Alonso Eduardo Caballero Quezada', org: 'Consultor y especialista en ciberseguridad', url: 'https://www.linkedin.com/in/alonsocaballeroquezada/' },
   { start: '16:30', end: '16:45', kind: 'Pausa', title: 'Pausa activa y receso técnico', who: COMITE },
-  { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Fundamentos para el análisis de malware: pensar como un analista', who: 'Grover Cordova', org: 'CEO & Founder · Security Labs' },
+  { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Fundamentos para el análisis de malware: pensar como un analista', who: 'Grover Cordova', org: 'CEO & Founder · Security Labs', url: 'https://www.linkedin.com/in/grover-cordova/' },
   { start: '18:45', end: '19:00', kind: 'Cierre', title: 'Cierre y balance de la primera jornada RootAccess', who: COMITE },
 ]
 
 const day2Morning: Item[] = [
-  { start: '08:30', end: '08:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: COMITE },
-  { start: '08:45', end: '09:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Jaime Díaz) y Dirección de Escuela ISIA' },
+  { start: '07:30', end: '07:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: COMITE },
+  { start: '07:45', end: '08:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Jaime Díaz) y Dirección de Escuela ISIA' },
+  { start: '08:00', end: '09:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 2', org: PANEL_ORG },
   { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Ciberseguridad, cloud, infraestructura e IA', who: 'Sandra Castillo', org: 'Huawei' },
   { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Ciberseguridad y continuidad operativa en la cadena agroindustrial', who: 'Carlos Alexis Pérez Rojas', org: 'Gerente de TI y Transformación Digital · Virú Group', url: 'https://www.linkedin.com/in/carlos-p%C3%A9rez-rojas-070777/' },
   { start: '11:00', end: '11:15', kind: 'Pausa', title: 'Coffee break y networking tecnológico', who: COMITE },
-  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 2', org: PANEL_ORG },
+  { start: '11:15', end: '12:15', kind: 'Conferencia', title: 'Privacidad y defensa contra el fraude móvil', who: 'Raul Guevara', org: 'Claro' },
   { start: '12:15', end: '13:15', kind: 'Conferencia', title: 'Conferencia magistral: IA generativa y automatización en la ciberdefensa', who: 'Jesus Rosales', org: 'Consultor en ciberseguridad · México', url: 'https://www.linkedin.com/in/jesus-rosales-salinas/', virtual: true },
   { start: '13:15', end: '14:30', kind: 'Almuerzo', title: 'Receso de almuerzo libre', who: COMITE },
 ]
 
 const day2Afternoon: Item[] = [
-  { start: '14:30', end: '15:30', kind: 'Conferencia', title: 'Fortinet, tecnología de ciberseguridad, SOC y la IA', who: 'Ing. Jorge Vigil', org: 'Fortinet Perú', virtual: true },
+  { start: '14:30', end: '15:30', kind: 'Conferencia', title: 'Fortinet, tecnología de ciberseguridad, SOC y la IA', who: 'Ing. Jorge Vigil', org: 'Fortinet Perú', url: 'https://www.linkedin.com/in/jorge-vigil-99b9b253/', virtual: true },
   { start: '15:30', end: '16:30', kind: 'Conferencia', title: 'Estrategias de ciberdefensa ofensiva y gestión de vulnerabilidades empresariales', who: 'Cesar Augusto Farro Flores', org: 'Founder & CEO · NPROS Cyber Tech LATAM', url: 'https://www.linkedin.com/in/cesar-farro-flores/' },
   { start: '16:30', end: '16:45', kind: 'Pausa', title: 'Pausa activa y receso técnico', who: COMITE },
   { start: '16:45', end: '18:45', kind: 'Taller práctico', title: 'Arquitectura y despliegue de monitoreo centralizado con Wazuh SIEM', who: 'Edward Vega Gavidia', org: 'Profesor universitario', url: 'https://www.linkedin.com/in/edward-vega-gavidia/' },
@@ -163,6 +168,12 @@ function ScheduleBlock({ items, isoDate }: { items: Item[]; isoDate: string }) {
               </div>
               <h4 className="cr-title">{it.title}</h4>
               <Speaker it={it} />
+              {it.kind === 'Conferencia' && (
+                <p className="cr-format">
+                  <MessagesSquare size={13} aria-hidden="true" />
+                  {TALK_MIN} min de exposición + {QA_MIN} min de preguntas y respuestas
+                </p>
+              )}
             </div>
           </li>
         )

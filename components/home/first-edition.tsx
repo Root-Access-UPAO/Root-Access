@@ -5,8 +5,8 @@ import { UpaoWordmark } from '@/components/brand/upao-logo'
 const FACTS = [
   { value: '01', label: 'Primera edición' },
   { value: '2', label: 'Días de evento' },
-  { value: '16 h', label: 'De conferencias y talleres' },
-  { value: '11', label: 'Especialistas invitados' },
+  { value: '17 h', label: 'De conferencias y talleres' },
+  { value: '12', label: 'Especialistas invitados' },
 ]
 
 /**
@@ -48,7 +48,7 @@ export function FirstEdition() {
           </p>
           <p className="first-ed__lead first-ed__lead--secondary">
             Durante dos días, estudiantes, docentes y profesionales compartirán el mismo espacio con
-            especialistas de organizaciones como <strong>Caja Trujillo, Huawei, Fortinet, Virú Group y Gold Fields</strong>,
+            especialistas de organizaciones como <strong>Caja Trujillo, Huawei, Fortinet, Claro, Virú Group y Gold Fields</strong>,
             además de representantes de la Fiscalía. No solo habrá charlas: también habrá talleres prácticos de
             análisis forense, análisis de malware y monitoreo con Wazuh SIEM, para que lo aprendido se lleve
             directo al teclado.
