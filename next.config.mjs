@@ -39,6 +39,8 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  // No generar AGENTS.md automáticamente al correr `next dev`.
+  agentRules: false,
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
