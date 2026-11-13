@@ -5,7 +5,7 @@ import { UpaoWordmark } from '@/components/brand/upao-logo'
 const FACTS = [
   { value: '01', label: 'Primera edición' },
   { value: '2', label: 'Días de evento' },
-  { value: '17 h', label: 'De conferencias y talleres' },
+  { value: '16 h', label: 'De conferencias y talleres' },
   { value: '12', label: 'Especialistas invitados' },
 ]
 

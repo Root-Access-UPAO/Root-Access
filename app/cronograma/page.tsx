@@ -7,13 +7,13 @@ import { UpaoEscudo } from '@/components/brand/upao-logo'
 
 export const metadata: Metadata = {
   title: 'Cronograma — ROOT ACCESS',
-  description: 'Programa oficial de Root Access 2026: 17 horas de conferencias y talleres prácticos de ciberseguridad. 19 y 20 de noviembre de 2026, UPAO, Trujillo.',
+  description: 'Programa oficial de Root Access 2026: 16 horas de conferencias y talleres prácticos de ciberseguridad. 19 y 20 de noviembre de 2026, UPAO, Trujillo.',
   alternates: { canonical: '/cronograma' },
 }
 
 /* Fuente: "Organizacion Root Access (2).xlsx" (13/11/2026), hojas "Cronograma actualizado", Ponentes y Paneles. */
 
-/** Formato de cada conferencia de 1 h: exposición + ronda de preguntas. */
+/** Formato de cada conferencia de ponente: 45 min de exposición + 15 min de preguntas (los paneles de estudiantes duran 30 min). */
 const TALK_MIN = 45
 const QA_MIN = 15
 
@@ -38,9 +38,9 @@ const COMITE = 'Comité Organizador RootAccess'
 const PANEL_ORG = 'Estudiantes de Ingeniería de Sistemas · UPAO'
 
 const day1Morning: Item[] = [
-  { start: '07:30', end: '07:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: 'Orquesta Sinfónica de la UPAO y Comité Organizador' },
-  { start: '07:45', end: '08:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Vladimir Urrelo) y Dirección de Escuela ISIA' },
-  { start: '08:00', end: '09:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 1', org: PANEL_ORG },
+  { start: '08:00', end: '08:15', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: 'Orquesta Sinfónica de la UPAO y Comité Organizador' },
+  { start: '08:15', end: '08:30', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Vladimir Urrelo) y Dirección de Escuela ISIA' },
+  { start: '08:30', end: '09:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 1', org: PANEL_ORG },
   { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Prevención de fraudes digitales y ciberseguridad en el sector microfinanciero', who: 'Nancy Tirado Merino', org: 'Caja Trujillo', url: 'https://www.linkedin.com/in/nancy-t-957434138/' },
   { start: '10:00', end: '10:15', kind: 'Pausa', title: 'Coffee break técnico y networking de asistentes', who: COMITE },
   { start: '10:15', end: '11:15', kind: 'Conferencia', title: 'Ciberdelitos, leyes y casos', who: 'Dr. Lenin Araujo', org: 'Fiscalía', url: 'https://www.linkedin.com/in/lenin-josmel-araujo-cabanillas-9345398b/' },
@@ -56,9 +56,9 @@ const day1Afternoon: Item[] = [
 ]
 
 const day2Morning: Item[] = [
-  { start: '07:30', end: '07:45', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: COMITE },
-  { start: '07:45', end: '08:00', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Jaime Díaz) y Dirección de Escuela ISIA' },
-  { start: '08:00', end: '09:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 2', org: PANEL_ORG },
+  { start: '08:00', end: '08:15', kind: 'Apertura', title: 'Ingreso y recepción de asistentes', who: COMITE },
+  { start: '08:15', end: '08:30', kind: 'Inauguración', title: 'Inauguración oficial de RootAccess UPAO y palabras de bienvenida institucional', who: 'Autoridades UPAO (Ing. Jaime Díaz) y Dirección de Escuela ISIA' },
+  { start: '08:30', end: '09:00', kind: 'Conferencia', title: 'De las aulas a la industria: retos del futuro ingeniero frente a las amenazas actuales', who: 'Panel 2', org: PANEL_ORG },
   { start: '09:00', end: '10:00', kind: 'Conferencia', title: 'Ciberseguridad, cloud, infraestructura e IA', who: 'Sandra Castillo', org: 'Huawei' },
   { start: '10:00', end: '11:00', kind: 'Conferencia', title: 'Ciberseguridad y continuidad operativa en la cadena agroindustrial', who: 'Carlos Alexis Pérez Rojas', org: 'Gerente de TI y Transformación Digital · Virú Group', url: 'https://www.linkedin.com/in/carlos-p%C3%A9rez-rojas-070777/' },
   { start: '11:00', end: '11:15', kind: 'Pausa', title: 'Coffee break y networking tecnológico', who: COMITE },
@@ -168,7 +168,7 @@ function ScheduleBlock({ items, isoDate }: { items: Item[]; isoDate: string }) {
               </div>
               <h4 className="cr-title">{it.title}</h4>
               <Speaker it={it} />
-              {it.kind === 'Conferencia' && (
+              {it.kind === 'Conferencia' && it.org !== PANEL_ORG && (
                 <p className="cr-format">
                   <MessagesSquare size={13} aria-hidden="true" />
                   {TALK_MIN} min de exposición + {QA_MIN} min de preguntas y respuestas
