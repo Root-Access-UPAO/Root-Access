@@ -1,56 +1,88 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useLimaDate } from './live-clock'
 
-export type ScheduleDay = { label: string; date: string; content: ReactNode }
-
-const navButton = {
-  display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none',
-  color: '#8a98a4', cursor: 'pointer', font: 'bold 14px Arial',
-} as const
+export type ScheduleDay = {
+  label: string
+  /** Fecha legible, p. ej. "Jueves 19 de noviembre" */
+  date: string
+  /** Fecha ISO (YYYY-MM-DD) para abrir automáticamente el día en curso */
+  isoDate: string
+  content: ReactNode
+}
 
 /**
- * Cambia el día visible. El contenido de todos los días llega ya renderizado desde el
- * servidor (está en el HTML para buscadores); aquí solo se oculta el que no toca.
+ * Pestañas de día (patrón WAI-ARIA Tabs). El contenido de todos los días llega ya
+ * renderizado desde el servidor (está en el HTML para buscadores); aquí solo se
+ * oculta el que no toca. Durante el evento se abre solo el día de hoy.
  */
 export function DaySwitcher({ days }: { days: ScheduleDay[] }) {
-  const [active, setActive] = useState(0)
-  const prev = active > 0 ? active - 1 : null
-  const next = active < days.length - 1 ? active + 1 : null
+  const [chosen, setChosen] = useState<number | null>(null)
+  const today = useLimaDate()
+  const todayIndex = days.findIndex((d) => d.isoDate === today)
+  const active = chosen ?? (todayIndex >= 0 ? todayIndex : 0)
+  const tabs = useRef<(HTMLButtonElement | null)[]>([])
+
+  const select = (i: number, focus = false) => {
+    setChosen(i)
+    if (focus) tabs.current[i]?.focus()
+  }
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    const last = days.length - 1
+    const keys: Record<string, number> = {
+      ArrowRight: active === last ? 0 : active + 1,
+      ArrowLeft: active === 0 ? last : active - 1,
+      Home: 0,
+      End: last,
+    }
+    if (e.key in keys) { e.preventDefault(); select(keys[e.key], true) }
+  }
 
   return (
     <>
-      <nav
-        aria-label="Días del evento"
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(6, 10, 16, 0.7)', border: '1px solid var(--line)', borderRadius: '12px', padding: '15px 25px', marginBottom: '50px' }}
-      >
-        {prev !== null ? (
-          <button type="button" onClick={() => setActive(prev)} aria-controls="cronograma-dias" style={navButton}>
-            <ArrowLeft size={18} aria-hidden="true" /> Ver {days[prev].label}
-          </button>
-        ) : <span />}
-
-        {/* aria-live: el lector de pantalla anuncia el día al cambiar */}
-        <div style={{ textAlign: 'center' }} aria-live="polite">
-          <h2 style={{ margin: 0, color: 'var(--cyan)', font: 'bold 22px Arial' }}>{days[active].label.toUpperCase()}</h2>
-          <span style={{ color: '#8a98a4', font: '12px monospace' }}>{days[active].date}</span>
+      <div className="cr-tabs-wrap">
+        <div role="tablist" aria-label="Días del evento" className="cr-tabs" onKeyDown={onKeyDown}>
+          {days.map((day, i) => {
+            const selected = i === active
+            return (
+              <button
+                key={day.label}
+                ref={(el) => { tabs.current[i] = el }}
+                type="button"
+                role="tab"
+                id={`tab-dia-${i}`}
+                aria-selected={selected}
+                aria-controls={`panel-dia-${i}`}
+                tabIndex={selected ? 0 : -1}
+                className="cr-tab"
+                onClick={() => select(i)}
+              >
+                <span className="cr-tab__label">
+                  {day.label}
+                  {day.isoDate === today && <span className="cr-tab__today">Hoy</span>}
+                </span>
+                <span className="cr-tab__date">{day.date}</span>
+              </button>
+            )
+          })}
         </div>
-
-        {next !== null ? (
-          <button type="button" onClick={() => setActive(next)} aria-controls="cronograma-dias" style={navButton}>
-            Ver {days[next].label} <ArrowRight size={18} aria-hidden="true" />
-          </button>
-        ) : <span />}
-      </nav>
-
-      <div id="cronograma-dias">
-        {days.map((day, i) => (
-          <section key={day.label} hidden={i !== active} aria-label={`${day.label}, ${day.date}`}>
-            {day.content}
-          </section>
-        ))}
       </div>
+
+      {days.map((day, i) => (
+        <section
+          key={day.label}
+          role="tabpanel"
+          id={`panel-dia-${i}`}
+          aria-labelledby={`tab-dia-${i}`}
+          hidden={i !== active}
+          tabIndex={0}
+          className="cr-panel"
+        >
+          {day.content}
+        </section>
+      ))}
     </>
   )
 }
